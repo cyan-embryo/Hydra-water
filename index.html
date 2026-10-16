@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#102c36">
+<title>Hydra — Water Tracker</title>
+<style>
+:root{color-scheme:dark;--bg:#0c1d24;--card:#142b34;--text:#edf8fa;--muted:#9bb4bc;--accent:#55d6d0;--border:#29434c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif}
+main{max-width:540px;margin:auto;padding:24px 17px 45px}
+header{display:flex;align-items:center;gap:12px;margin-bottom:25px}
+.logo{width:48px;height:48px;border-radius:16px;background:#1b454d;display:grid;place-items:center;font-size:27px}
+h1{font-size:25px;margin:0;letter-spacing:-.7px}
+header p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:20px;margin-bottom:16px}
+.label{color:var(--muted);font-size:13px}
+.total{font-size:42px;font-weight:750;letter-spacing:-1.5px;margin:5px 0}
+.total span{font-size:16px;font-weight:500;color:var(--muted);letter-spacing:0}
+.track{height:9px;background:#29434c;border-radius:10px;overflow:hidden;margin:14px 0 9px}
+#bar{height:100%;width:0;background:var(--accent);border-radius:10px;transition:width .25s}
+.row{display:flex;justify-content:space-between;gap:10px;align-items:center}
+h2{font-size:17px;margin:0 0 15px}
+.drinks{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+button{font:inherit;cursor:pointer}
+.drink{background:#1a3741;color:var(--text);border:1px solid #31515b;border-radius:15px;padding:15px 5px;min-height:95px}
+.drink:active{transform:scale(.97)}
+.drink .emoji{font-size:25px;display:block;margin-bottom:5px}
+.drink strong{display:block;font-size:14px}
+.drink small{color:var(--muted);font-size:12px}
+button.primary{background:var(--accent);color:#09252b;border:0;border-radius:12px;padding:12px 15px;font-weight:700}
+button.secondary{background:#1c3943;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:9px 12px}
+input{width:100%;min-width:0;background:#0d222a;color:var(--text);border:1px solid #36515b;border-radius:10px;padding:12px;font:inherit;margin:6px 0 12px}
+label{font-size:13px;color:var(--muted)}
+.formrow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#history{list-style:none;margin:0;padding:0}
+#history li{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);font-size:14px}
+#history li:last-child{border:0}
+#history small{display:block;color:var(--muted);margin-top:3px}
+.empty{color:var(--muted);font-size:14px;padding:5px 0}
+.drinklist{display:flex;flex-direction:column;gap:8px}
+.customitem{display:flex;justify-content:space-between;align-items:center;background:#1a3741;border-radius:12px;padding:12px}
+.customitem button{margin-left:8px}
+footer{text-align:center;color:#76929b;font-size:12px;padding-top:6px}
+</style>
+</head>
+<body>
+<main>
+<header>
+<div class="logo">💧</div>
+<div><h1>Hydra</h1><p>Your daily hydration companion</p></div>
+</header>
+
+<section class="card">
+<div class="row"><span class="label">TODAY'S INTAKE</span><span id="percent" class="label">0% of goal</span></div>
+<div class="total"><span id="total">0</span> <span>ml</span></div>
+<div class="track"><div id="bar"></div></div>
+<div class="row"><span class="label">Goal: <b id="goalLabel">2500</b> ml</span><span class="label" id="remaining">2500 ml to go</span></div>
+</section>
+
+<section class="card">
+<h2>Quick add</h2>
+<div id="quick" class="drinks"></div>
+</section>
+
+<section class="card">
+<h2>Add a drink size</h2>
+<div class="formrow">
+<div><label for="drinkName">Drink name</label><input id="drinkName" maxlength="22" placeholder="e.g. Water bottle"></div>
+<div><label for="drinkMl">Volume (ml)</label><input id="drinkMl" type="number" min="1" max="10000" placeholder="e.g. 500"></div>
+</div>
+<button class="primary" id="addDrink">Add drink size</button>
+<div style="height:16px"></div>
+<div id="customDrinks" class="drinklist"></div>
+</section>
+
+<section class="card">
+<div class="row"><h2 style="margin:0">Daily history</h2><button class="secondary" id="todayBtn">Today</button></div>
+<div style="height:12px"></div>
+<ul id="history"></ul>
+</section>
+
+<section class="card">
+<h2>Settings</h2>
+<label for="goal">Daily water goal (ml)</label>
+<input id="goal" type="number" min="100" max="15000" step="100">
+<button class="primary" id="saveGoal">Save goal</button>
+<p class="label" style="line-height:1.6;margin-bottom:0">Your intake and settings are saved in this browser on this device.</p>
+</section>
+<footer>Small sips, steady habits.</footer>
+</main>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const defaults=[
+{id:'d1',name:'Glass',ml:250,emoji:'🥛'},
+{id:'d2',name:'Large glass',ml:350,emoji:'🥤'},
+{id:'d3',name:'Water bottle',ml:500,emoji:'🧴'}
+];
+function load(key,fallback){try{const x=JSON.parse(localStorage.getItem('hydra_'+key));return x===null?fallback:x}catch(e){return fallback}}
+let goal=load('goal',2500);
+let drinks=load('drinks',defaults);
+let days=load('days',{});
+let selected=today();
+function save(){localStorage.setItem('hydra_goal',JSON.stringify(goal));localStorage.setItem('hydra_drinks',JSON.stringify(drinks));localStorage.setItem('hydra_days',JSON.stringify(days))}
+function record(day){if(!days[day])days[day]={total:0,entries:[]};return days[day]}
+function addDrink(d){const r=record(today());r.total+=d.ml;r.entries.push({name:d.name,ml:d.ml,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});selected=today();save();render()}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function renderQuick(){$('quick').innerHTML=drinks.map(d=>`<button class="drink" data-drink="${esc(d.id)}"><span class="emoji">${d.emoji||'💧'}</span><strong>${esc(d.name)}</strong><small>${d.ml} ml</small></button>`).join('');$('quick').querySelectorAll('[data-drink]').forEach(b=>b.onclick=()=>{const d=drinks.find(x=>x.id===b.dataset.drink);if(d)addDrink(d)})}
+function renderCustom(){$('customDrinks').innerHTML=drinks.length?drinks.map(d=>`<div class="customitem"><span>${d.emoji||'💧'} ${esc(d.name)} <small style="color:var(--muted)">· ${d.ml} ml</small></span><button class="secondary" data-remove="${esc(d.id)}">Remove</button></div>`).join(''):'<p class="empty">No drink sizes yet.</p>';$('customDrinks').querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{drinks=drinks.filter(d=>d.id!==b.dataset.remove);save();render()})}
+function renderHistory(){const r=days[selected];const entries=r&&r.entries?r.entries.slice().reverse():[];$('history').innerHTML=`<li><span><b>${selected===today()?'Today':selected}</b><small>Total intake</small></span><b>${r?r.total:0} ml</b></li>`+(entries.length?entries.map(e=>`<li><span>${esc(e.name)}<small>${esc(e.time||'')}</small></span><b>+${e.ml} ml</b></li>`).join(''):'<li class="empty">No drinks recorded for this day.</li>')}
+function render(){const r=record(selected);if(selected===today()){$('total').textContent=r.total;$('percent').textContent=Math.round(r.total/goal*100)+'% of goal';$('bar').style.width=Math.min(100,r.total/goal*100)+'%';$('goalLabel').textContent=goal;$('remaining').textContent=r.total>=goal?'Goal reached!':(goal-r.total)+' ml to go'}else{$('total').textContent=r.total;$('percent').textContent='History';$('bar').style.width=Math.min(100,r.total/goal*100)+'%';$('goalLabel').textContent=goal;$('remaining').textContent=selected}$('goal').value=goal;renderQuick();renderCustom();renderHistory()}
+$('addDrink').onclick=()=>{const name=$('drinkName').value.trim();const ml=Number($('drinkMl').value);if(!name||!Number.isFinite(ml)||ml<1||ml>10000){alert('Enter a drink name and a volume between 1 and 10000 ml.');return}drinks.push({id:'d'+Date.now(),name,ml:Math.round(ml),emoji:'💧'});$('drinkName').value='';$('drinkMl').value='';save();render()};
+$('saveGoal').onclick=()=>{const n=Number($('goal').value);if(!Number.isFinite(n)||n<100||n>15000){alert('Choose a goal between 100 and 15000 ml.');return}goal=Math.round(n);save();render()};
+$('todayBtn').onclick=()=>{selected=today();render()};
+render();
+})();
+</script>
+</body>
+</html>
